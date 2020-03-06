@@ -1,14 +1,14 @@
-# Template for the Intel Compilers on a Cray System
+# Template for the Intel Compilers on NASA NCCS System
 #
 # Typical use with mkmf
-# mkmf -t ncrc-cray.mk -c"-Duse_libMPI -Duse_netCDF" path_names /usr/local/include
+# mkmf -t nccs-intel.mk -c"-Duse_libMPI -Duse_netCDF" path_names /usr/local/include
 
 ############
 # Commands Macros
 ############
-FC = ftn
-CC = cc
-LD = ftn $(MAIN_PROGRAM)
+FC = mpiifort
+CC = mpiicc
+LD = mpiifort $(MAIN_PROGRAM)
 
 #######################
 # Build target macros
@@ -49,9 +49,9 @@ NETCDF =             # If value is '3' and CPPDEFS contains
 INCLUDES =           # A list of -I Include directories to be added to the
                      # the compile command.
 
-ISA = -xsse2         # The Intel Instruction Set Archetecture (ISA) compile
-                     # option to use.  If blank, than use the default SSE
-                     # settings for the host.  Current default is to use SSE2.
+SSE = -xsse2         # The SSE options to be used to compile.  If blank,
+                     # than use the default SSE settings for the host.
+                     # Current default is to use SSE2.
 
 COVERAGE =           # Add the code coverage compile options.
 
@@ -85,7 +85,7 @@ CPPDEFS += -Duse_netCDF
 CPPDEFS += -DHAVE_SCHED_GETAFFINITY
 
 # Macro for Fortran preprocessor
-FPPFLAGS := -fpp -Wp,-w $(INCLUDES)
+FPPFLAGS = -fpp -Wp,-w $(INCLUDES)
 # Fortran Compiler flags for the NetCDF library
 FPPFLAGS += $(shell nf-config --fflags)
 
@@ -104,7 +104,7 @@ FFLAGS_VERBOSE = -v -V -what -warn all
 FFLAGS_COVERAGE = -prof-gen=srcpos
 
 # Macro for C preprocessor
-CPPFLAGS := -D__IFC $(INCLUDES)
+CPPFLAGS = -D__IFC $(INCLUDES)
 # C Compiler flags for the NetCDF library
 CPPFLAGS += $(shell nc-config --cflags)
 
@@ -123,17 +123,17 @@ CFLAGS_COVERAGE = -prof-gen=srcpos
 
 # Optional Testing compile flags.  Mutually exclusive from DEBUG, REPRO, and OPT
 # *_TEST will match the production if no new option(s) is(are) to be tested.
-FFLAGS_TEST := $(FFLAGS_OPT)
-CFLAGS_TEST := $(CFLAGS_OPT)
+FFLAGS_TEST = $(FFLAGS_OPT)
+CFLAGS_TEST = $(CFLAGS_OPT)
 
 # Linking flags
-LDFLAGS :=
-LDFLAGS_OPENMP := -qopenmp
-LDFLAGS_VERBOSE := -Wl,-V,--verbose,-cref,-M
+LDFLAGS = $(shell nf-config --flibs)
+LDFLAGS_OPENMP = -qopenmp
+LDFLAGS_VERBOSE = -Wl,-V,--verbose,-cref,-M
 LDFLAGS_COVERAGE = -prof-gen=srcpos
 
 # Start with blank LIBS
-LIBS :=
+LIBS =
 
 # Get compile flags based on target macros.
 ifdef REPRO
@@ -156,9 +156,9 @@ FFLAGS += $(FFLAGS_OPENMP)
 LDFLAGS += $(LDFLAGS_OPENMP)
 endif
 
-ifdef ISA
-CFLAGS += $(ISA)
-FFLAGS += $(ISA)
+ifdef SSE
+CFLAGS += $(SSE)
+FFLAGS += $(SSE)
 endif
 
 ifdef NO_OVERRIDE_LIMITS
@@ -173,7 +173,9 @@ endif
 
 ifeq ($(NETCDF),3)
   # add the use_LARGEFILE cppdef
-  CPPDEFS += -Duse_LARGEFILE
+  ifneq ($(findstring -Duse_netCDF,$(CPPDEFS)),)
+    CPPDEFS += -Duse_LARGEFILE
+  endif
 endif
 
 ifdef COVERAGE

@@ -49,7 +49,7 @@ NETCDF =             # If value is '3' and CPPDEFS contains
 INCLUDES =           # A list of -I Include directories to be added to the
                      # the compile command.
 
-SSE = -msse2         # The SSE options to be used to compile.  If blank,
+SSE = -xsse2         # The SSE options to be used to compile.  If blank,
                      # than use the default SSE settings for the host.
                      # Current default is to use SSE2.
 
@@ -77,6 +77,12 @@ endif
 endif
 
 MAKEFLAGS += --jobs=$(shell grep '^processor' /proc/cpuinfo | wc -l)
+
+# Required Preprocessor Macros:
+CPPDEFS += -Duse_netCDF
+
+# Additional Preprocessor Macros needed due to  Autotools and CMake
+CPPDEFS += -DHAVE_SCHED_GETAFFINITY
 
 # Macro for Fortran preprocessor
 FPPFLAGS = -fpp -Wp,-w $(INCLUDES)
